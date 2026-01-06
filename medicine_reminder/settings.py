@@ -212,7 +212,19 @@ CSRF_COOKIE_DOMAIN = None
 SESSION_COOKIE_NAME = 'sessionid'
 CSRF_COOKIE_NAME = 'csrftoken'
 
+# Email Configuration
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='testmagento111@gmail.com')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='rcabfhjwneiamcoj')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+# Twilio Configuration (SMS)
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='ACfa6197d76fac64ba39806e2752ed7e5b')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='e4e7045214ae3c7f7e9b5de8ada68553')
+TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='+14782426217')
 
 # Firebase Configuration (Push Notifications)
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
