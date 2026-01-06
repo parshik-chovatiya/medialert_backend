@@ -40,7 +40,7 @@ def refresh_token_view(request):
             value=str(refresh.access_token),
             httponly=True,
             secure=True,
-            samesite='None',
+            samesite='Lax',
             max_age=900  # 15 minutes
         )
         
@@ -73,7 +73,7 @@ def register_view(request):
             value=str(refresh.access_token),
             httponly=True,
             secure=True,  # Set to True in production (HTTPS)
-            samesite='None',
+            samesite='Lax',
             max_age=900  # 15 minutes
         )
         response.set_cookie(
@@ -81,7 +81,7 @@ def register_view(request):
             value=str(refresh),
             httponly=True,
             secure=True,
-            samesite='None',
+            samesite='Lax',
             max_age=604800  # 7 days
         )
         
@@ -124,7 +124,7 @@ def login_view(request):
                 value=str(refresh.access_token),
                 httponly=True,
                 secure=True,
-                samesite='None',
+                samesite='Lax',
                 max_age=900  # 15 minutes
             )
             response.set_cookie(
@@ -132,7 +132,7 @@ def login_view(request):
                 value=str(refresh),
                 httponly=True,
                 secure=True,
-                samesite='None',
+                samesite='Lax',
                 max_age=604800  # 7 days
             )
             
