@@ -12,7 +12,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,https://maria-unhelpable-chelsie.ngrok-free.dev').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,maria-unhelpable-chelsie.ngrok-free.dev').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -156,6 +156,8 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
+# CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -163,12 +165,13 @@ CSRF_TRUSTED_ORIGINS = [
     "https://maria-unhelpable-chelsie.ngrok-free.dev",
 ]
 
-
 # CORS Settings
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,https://maria-unhelpable-chelsie.ngrok-free.dev'
-).split(',')
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://192.168.29.38:3000',
+    'https://maria-unhelpable-chelsie.ngrok-free.dev',
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -193,7 +196,38 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+# Expose Set-Cookie header in CORS responses
+CORS_EXPOSE_HEADERS = ['Set-Cookie']
 
+# Cookie Settings for Cross-Origin with Credentials
+SESSION_COOKIE_SECURE = True  # True because ngrok uses HTTPS
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = 'None'  # Required for cross-origin with credentials
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Must be False so JavaScript can read it
+
+# Cookie domains (None allows cookies to work on any domain)
+SESSION_COOKIE_DOMAIN = None
+CSRF_COOKIE_DOMAIN = None
+
+# Cookie names
+SESSION_COOKIE_NAME = 'sessionid'
+CSRF_COOKIE_NAME = 'csrftoken'
+
+# Email Configuration
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='testmagento111@gmail.com')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='rcabfhjwneiamcoj')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Twilio Configuration (SMS)
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='ACfa6197d76fac64ba39806e2752ed7e5b')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='e4e7045214ae3c7f7e9b5de8ada68553')
+TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='+14782426217')
 
 # Firebase Configuration (Push Notifications)
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
@@ -271,3 +305,8 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+else:
+    # Development settings - override cookie security for local testing
+    # Note: When using ngrok (HTTPS), keep these as True
+    # When testing on pure HTTP (localhost only), set to False
+    pass  # Cookie settings already configured above
