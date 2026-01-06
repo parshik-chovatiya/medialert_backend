@@ -12,7 +12,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,maria-unhelpable-chelsie.ngrok-free.dev').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,https://maria-unhelpable-chelsie.ngrok-free.dev').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -156,8 +156,6 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
-
-# CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -165,13 +163,12 @@ CSRF_TRUSTED_ORIGINS = [
     "https://maria-unhelpable-chelsie.ngrok-free.dev",
 ]
 
+
 # CORS Settings
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://192.168.29.38:3000',
-    'https://maria-unhelpable-chelsie.ngrok-free.dev',
-]
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:3000,http://127.0.0.1:3000,https://maria-unhelpable-chelsie.ngrok-free.dev'
+).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -293,8 +290,3 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-else:
-    # Development settings - override cookie security for local testing
-    # Note: When using ngrok (HTTPS), keep these as True
-    # When testing on pure HTTP (localhost only), set to False
-    pass  # Cookie settings already configured above
