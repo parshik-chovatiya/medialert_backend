@@ -85,3 +85,14 @@ Thumbs.db
 celerybeat-schedule
 celerybeat-schedule-shm
 celerybeat-schedule-wal
+
+__pycache__/
+*.py[cod]
+*.log
+.env
+venv/
+staticfiles/
+db.sqlite3
+logs/
+*.bak
+.DS_Store
