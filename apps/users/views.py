@@ -14,41 +14,7 @@ from .serializers import (
     UserUpdateSerializer,
     PasswordChangeSerializer
 )
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def refresh_token_view(request):
-    """Refresh access token using refresh token from cookie"""
-    refresh_token = request.COOKIES.get('refresh_token')
-    
-    if not refresh_token:
-        return Response({
-            'error': 'Refresh token not found'
-        }, status=status.HTTP_401_UNAUTHORIZED)
-    
-    try:
-        refresh = RefreshToken(refresh_token)
-        
-        response = Response({
-            'message': 'Token refreshed successfully'
-        }, status=status.HTTP_200_OK)
-        
-        # Set new access token in cookie
-        response.set_cookie(
-            key='access_token',
-            value=str(refresh.access_token),
-            httponly=True,
-            secure=True,
-            samesite='Lax',
-            max_age=900  # 15 minutes
-        )
-        
-        return response
-    except Exception as e:
-        return Response({
-            'error': 'Invalid or expired refresh token'
-        }, status=status.HTTP_401_UNAUTHORIZED)
+from utils.responses import StandardResponse
 
 
 @api_view(['POST'])
@@ -62,32 +28,40 @@ def register_view(request):
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         
-        response = Response({
-            'message': 'User registered successfully',
+        response_data = {
             'user': UserSerializer(user).data
-        }, status=status.HTTP_201_CREATED)
+        }
+        
+        response = StandardResponse.created(
+            data=response_data,
+            message='User registered successfully'
+        )
         
         # Set tokens in HTTP-only cookies
         response.set_cookie(
             key='access_token',
             value=str(refresh.access_token),
             httponly=True,
-            secure=True,  # Set to True in production (HTTPS)
-            samesite='Lax',
-            max_age=900  # 15 minutes
+            secure=True,
+            samesite='None',
+            max_age=900
         )
         response.set_cookie(
             key='refresh_token',
             value=str(refresh),
             httponly=True,
             secure=True,
-            samesite='Lax',
-            max_age=604800  # 7 days
+            samesite='None',
+            max_age=604800
         )
         
         return response
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return StandardResponse.error(
+        message=serializer.errors,
+        errors=serializer.errors,
+        status_code=status.HTTP_400_BAD_REQUEST
+    )
 
 
 @api_view(['POST'])
@@ -113,10 +87,14 @@ def login_view(request):
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
             
-            response = Response({
-                'message': 'Login successful',
+            response_data = {
                 'user': UserSerializer(user).data
-            }, status=status.HTTP_200_OK)
+            }
+            
+            response = StandardResponse.success(
+                data=response_data,
+                message='Login successful'
+            )
             
             # Set tokens in HTTP-only cookies
             response.set_cookie(
@@ -124,25 +102,27 @@ def login_view(request):
                 value=str(refresh.access_token),
                 httponly=True,
                 secure=True,
-                samesite='Lax',
-                max_age=900  # 15 minutes
+                samesite='None',
+                max_age=900
             )
             response.set_cookie(
                 key='refresh_token',
                 value=str(refresh),
                 httponly=True,
                 secure=True,
-                samesite='Lax',
-                max_age=604800  # 7 days
+                samesite='None',
+                max_age=604800
             )
             
             return response
         
-        return Response({
-            'error': 'Invalid email or password'
-        }, status=status.HTTP_401_UNAUTHORIZED)
+        return StandardResponse.unauthorized(message='Invalid email or password')
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return StandardResponse.error(
+        message='Invalid input',
+        errors=serializer.errors,
+        status_code=status.HTTP_400_BAD_REQUEST
+    )
 
 
 @api_view(['POST'])
@@ -161,9 +141,7 @@ def logout_view(request):
             token = RefreshToken(refresh_token)
             token.blacklist()
         
-        response = Response({
-            'message': 'Logout successful'
-        }, status=status.HTTP_200_OK)
+        response = StandardResponse.success(message='Logout successful')
         
         # Delete cookies
         response.delete_cookie('access_token')
@@ -171,9 +149,11 @@ def logout_view(request):
         
         return response
     except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+        return StandardResponse.error(
+            message='Logout failed',
+            errors={'detail': str(e)},
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @api_view(['GET'])
@@ -181,7 +161,7 @@ def logout_view(request):
 def current_user_view(request):
     """Get current authenticated user"""
     serializer = UserSerializer(request.user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return StandardResponse.success(data=serializer.data)
 
 
 @api_view(['POST'])
@@ -191,19 +171,24 @@ def onboarding_view(request):
     user = request.user
     
     if user.is_onboarded:
-        return Response({
-            'error': 'User already onboarded'
-        }, status=status.HTTP_400_BAD_REQUEST)
+        return StandardResponse.error(
+            message='User already onboarded',
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
     
     serializer = OnboardingSerializer(user, data=request.data)
     if serializer.is_valid():
         serializer.save()
-        return Response({
-            'message': 'Onboarding completed successfully',
-            'user': UserSerializer(user).data
-        }, status=status.HTTP_200_OK)
+        return StandardResponse.success(
+            data={'user': UserSerializer(user).data},
+            message='Onboarding completed successfully'
+        )
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return StandardResponse.error(
+        message='Onboarding failed',
+        errors=serializer.errors,
+        status_code=status.HTTP_400_BAD_REQUEST
+    )
 
 
 @api_view(['GET'])
@@ -211,11 +196,40 @@ def onboarding_view(request):
 def onboarding_status_view(request):
     """Check onboarding status"""
     user = request.user
-    return Response({
+    return StandardResponse.success(data={
         'is_onboarded': user.is_onboarded,
         'email': user.email,
         'name': user.name or None
-    }, status=status.HTTP_200_OK)
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token_view(request):
+    """Refresh access token using refresh token from cookie"""
+    refresh_token = request.COOKIES.get('refresh_token')
+    
+    if not refresh_token:
+        return StandardResponse.unauthorized(message='Refresh token not found')
+    
+    try:
+        refresh = RefreshToken(refresh_token)
+        
+        response = StandardResponse.success(message='Token refreshed successfully')
+        
+        # Set new access token in cookie
+        response.set_cookie(
+            key='access_token',
+            value=str(refresh.access_token),
+            httponly=True,
+            secure=True,
+            samesite='None',
+            max_age=900
+        )
+        
+        return response
+    except Exception as e:
+        return StandardResponse.unauthorized(message='Invalid or expired refresh token')
 
 
 class UserUpdateView(generics.UpdateAPIView):
@@ -230,13 +244,19 @@ class UserUpdateView(generics.UpdateAPIView):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
         
-        return Response({
-            'message': 'Profile updated successfully',
-            'user': UserSerializer(instance).data
-        }, status=status.HTTP_200_OK)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return StandardResponse.success(
+                data={'user': UserSerializer(instance).data},
+                message='Profile updated successfully'
+            )
+        
+        return StandardResponse.error(
+            message='Profile update failed',
+            errors=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @api_view(['POST'])
@@ -249,8 +269,10 @@ def change_password_view(request):
         user.set_password(serializer.validated_data['new_password'])
         user.save()
         
-        return Response({
-            'message': 'Password changed successfully'
-        }, status=status.HTTP_200_OK)
+        return StandardResponse.success(message='Password changed successfully')
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return StandardResponse.error(
+        message='Password change failed',
+        errors=serializer.errors,
+        status_code=status.HTTP_400_BAD_REQUEST
+    )
