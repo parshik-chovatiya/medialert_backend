@@ -8,10 +8,10 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
@@ -74,11 +74,11 @@ WSGI_APPLICATION = 'medicine_reminder.wsgi.application'
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': config('DB_NAME', default='medicine_reminder_db'),
-#         'USER': config('DB_USER', default='postgres'),
-#         'PASSWORD': config('DB_PASSWORD', default='admin'),
-#         'HOST': config('DB_HOST', default='localhost'),
-#         'PORT': config('DB_PORT', default='5432'),
+#         'NAME': config('DB_NAME',
+#         'USER': config('DB_USER')
+#         'PASSWORD': config('DB_PASSWORD')
+#         'HOST': config('DB_HOST')
+#         'PORT': config('DB_PORT')
 #     }
 # }
 
@@ -117,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = config('DEFAULT_TIMEZONE', default='UTC')
+TIME_ZONE = config('DEFAULT_TIMEZONE')
 USE_I18N = True
 USE_TZ = True
 
@@ -178,9 +178,9 @@ CSRF_TRUSTED_ORIGINS = [
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,https://maria-unhelpable-chelsie.ngrok-free.dev'
-).split(',')
+    "CORS_ALLOWED_ORIGINS",
+    cast=lambda v: [o.strip() for o in v.split(",")]
+)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -225,25 +225,25 @@ SESSION_COOKIE_NAME = 'sessionid'
 CSRF_COOKIE_NAME = 'csrftoken'
 
 # Email Configuration
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='testmagento111@gmail.com')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='rcabfhjwneiamcoj')
+EMAIL_BACKEND = config('EMAIL_BACKEND')
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT', cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Twilio Configuration (SMS)
-TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='ACfa6197d76fac64ba39806e2752ed7e5b')
-TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='e4e7045214ae3c7f7e9b5de8ada68553')
-TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='+14782426217')
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER')
 
 # Firebase Configuration (Push Notifications)
-FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
+FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH')
 
 # Celery Configuration
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
