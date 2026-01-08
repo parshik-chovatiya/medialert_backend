@@ -1,3 +1,4 @@
+# apps/reminders/models.py
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.users.models import CustomUser

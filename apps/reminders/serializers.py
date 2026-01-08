@@ -1,3 +1,4 @@
+# apps/reminders/serializers.py
 from rest_framework import serializers
 from .models import Reminder, DoseSchedule
 from apps.inventory.models import Inventory
@@ -159,10 +160,19 @@ class ReminderListSerializer(serializers.ModelSerializer):
     
     def get_next_dose_time(self, obj):
         from django.utils import timezone
-        now = timezone.now().time()
-        next_dose = obj.dose_schedules.filter(time__gt=now).order_by('time').first()
+        import pytz
+        
+        # Get user's timezone
+        user_timezone = pytz.timezone(obj.user.timezone)
+        
+        # Convert current UTC time to user's timezone
+        now_user_tz = timezone.now().astimezone(user_timezone).time()
+        
+        # Find next dose after current time in user's timezone
+        next_dose = obj.dose_schedules.filter(time__gt=now_user_tz).order_by('time').first()
         if next_dose:
             return next_dose.time
+        
         # If no dose found for today, return first dose of tomorrow
         first_dose = obj.dose_schedules.order_by('time').first()
         return first_dose.time if first_dose else None

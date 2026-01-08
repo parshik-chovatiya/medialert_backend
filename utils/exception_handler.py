@@ -1,42 +1,44 @@
-
+# utils/exception_handler.py
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import ValidationError, AuthenticationFailed, NotFound
-from rest_framework import status
+from rest_framework.exceptions import ValidationError, AuthenticationFailed, NotFound, PermissionDenied
+from rest_framework import status as http_status
 
 
 def custom_exception_handler(exc, context):
     """
     Custom exception handler for standardized error responses
     """
-    # Call REST framework's default exception handler first
     response = exception_handler(exc, context)
     
     if response is not None:
-        # Standardize error response
-        error_data = {
-            "status": "error",
-            "message": "An error occurred"
-        }
+        error_message = "An error occurred"
         
         # Handle different exception types
         if isinstance(exc, ValidationError):
-            error_data["message"] = "Validation error"
-            error_data["errors"] = response.data
+            from utils.responses import StandardResponse
+            error_message = StandardResponse.format_validation_errors(response.data)
         elif isinstance(exc, AuthenticationFailed):
-            error_data["message"] = str(exc)
+            error_message = str(exc)
+        elif isinstance(exc, PermissionDenied):
+            error_message = str(exc)
         elif isinstance(exc, NotFound):
-            error_data["message"] = str(exc)
+            error_message = str(exc)
         else:
-            # Generic error message
             if isinstance(response.data, dict):
                 if 'detail' in response.data:
-                    error_data["message"] = response.data['detail']
+                    error_message = str(response.data['detail'])
                 else:
-                    error_data["message"] = str(response.data)
-                    error_data["errors"] = response.data
+                    from utils.responses import StandardResponse
+                    error_message = StandardResponse.format_validation_errors(response.data)
+            elif isinstance(response.data, list):
+                error_message = str(response.data[0]) if response.data else "An error occurred"
             else:
-                error_data["message"] = str(response.data)
+                error_message = str(response.data)
         
-        response.data = error_data
+        # Return standardized error response
+        response.data = {
+            "status": "error",
+            "message": error_message
+        }
     
     return response

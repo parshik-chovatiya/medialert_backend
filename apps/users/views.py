@@ -1,3 +1,4 @@
+# apps/users/views.py
 from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -57,11 +58,9 @@ def register_view(request):
         
         return response
     
-    return StandardResponse.error(
-        message=serializer.errors,
-        errors=serializer.errors,
-        status_code=status.HTTP_400_BAD_REQUEST
-    )
+    # Format error message
+    error_message = StandardResponse.format_validation_errors(serializer.errors)
+    return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -118,11 +117,8 @@ def login_view(request):
         
         return StandardResponse.unauthorized(message='Invalid email or password')
     
-    return StandardResponse.error(
-        message='Invalid input',
-        errors=serializer.errors,
-        status_code=status.HTTP_400_BAD_REQUEST
-    )
+    error_message = StandardResponse.format_validation_errors(serializer.errors)
+    return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -149,11 +145,7 @@ def logout_view(request):
         
         return response
     except Exception as e:
-        return StandardResponse.error(
-            message='Logout failed',
-            errors={'detail': str(e)},
-            status_code=status.HTTP_400_BAD_REQUEST
-        )
+        return StandardResponse.error(message='Logout failed', status_code=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -184,11 +176,8 @@ def onboarding_view(request):
             message='Onboarding completed successfully'
         )
     
-    return StandardResponse.error(
-        message='Onboarding failed',
-        errors=serializer.errors,
-        status_code=status.HTTP_400_BAD_REQUEST
-    )
+    error_message = StandardResponse.format_validation_errors(serializer.errors)
+    return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -252,11 +241,8 @@ class UserUpdateView(generics.UpdateAPIView):
                 message='Profile updated successfully'
             )
         
-        return StandardResponse.error(
-            message='Profile update failed',
-            errors=serializer.errors,
-            status_code=status.HTTP_400_BAD_REQUEST
-        )
+        error_message = StandardResponse.format_validation_errors(serializer.errors)
+        return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -271,8 +257,5 @@ def change_password_view(request):
         
         return StandardResponse.success(message='Password changed successfully')
     
-    return StandardResponse.error(
-        message='Password change failed',
-        errors=serializer.errors,
-        status_code=status.HTTP_400_BAD_REQUEST
-    )
+    error_message = StandardResponse.format_validation_errors(serializer.errors)
+    return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)

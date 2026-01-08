@@ -1,3 +1,4 @@
+# utils/responses.py
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -16,6 +17,7 @@ class StandardResponse:
         }
         """
         response_data = {"status": "success"}
+        
         if message:
             response_data["message"] = message
         
@@ -25,22 +27,18 @@ class StandardResponse:
         return Response(response_data, status=status_code)
     
     @staticmethod
-    def error(message, errors=None, status_code=status.HTTP_400_BAD_REQUEST):
+    def error(message, status_code=status.HTTP_400_BAD_REQUEST):
         """
         Error response format
         {
             "status": "error",
-            "message": "Error message",
-            "errors": {...}  # Optional detailed errors
+            "message": "Error message"
         }
         """
         response_data = {
             "status": "error",
             "message": message
         }
-        
-        if errors:
-            response_data["errors"] = errors
         
         return Response(response_data, status=status_code)
     
@@ -71,3 +69,27 @@ class StandardResponse:
     def not_found(message="Resource not found"):
         """Not found response (404)"""
         return StandardResponse.error(message, status_code=status.HTTP_404_NOT_FOUND)
+    
+    @staticmethod
+    def format_validation_errors(errors):
+        """
+        Convert DRF validation errors to simple string message
+        Input: {"email": ["User with this email already exists."]}
+        Output: "User with this email already exists."
+        """
+        if isinstance(errors, dict):
+            # Get first error from first field
+            for field, messages in errors.items():
+                if isinstance(messages, list) and len(messages) > 0:
+                    return str(messages[0])
+                elif isinstance(messages, str):
+                    return messages
+                elif isinstance(messages, dict):
+                    # Nested errors
+                    return StandardResponse.format_validation_errors(messages)
+            return "Validation error occurred"
+        elif isinstance(errors, list) and len(errors) > 0:
+            return str(errors[0])
+        elif isinstance(errors, str):
+            return errors
+        return "An error occurred"

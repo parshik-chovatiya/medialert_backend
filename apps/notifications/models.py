@@ -1,3 +1,4 @@
+# apps/notifications/models.py
 from django.db import models
 from apps.users.models import CustomUser
 from apps.reminders.models import Reminder

@@ -1,3 +1,4 @@
+# apps/inventory/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from .serializers import (
     InventoryAdjustSerializer,
     InventoryCreateSerializer
 )
+from utils.responses import StandardResponse
 
 
 class InventoryViewSet(viewsets.ModelViewSet):
@@ -48,27 +50,28 @@ class InventoryViewSet(viewsets.ModelViewSet):
             queryset = [item for item in queryset if item.is_low_stock()]
         
         serializer = self.get_serializer(queryset, many=True)
-        return Response({
+        return StandardResponse.success(data={
             'count': len(serializer.data) if isinstance(queryset, list) else queryset.count(),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'inventory': serializer.data
+        })
     
     def create(self, request, *args, **kwargs):
         """Create manual inventory entry (not linked to reminder)"""
         serializer = self.get_serializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             inventory = serializer.save()
-            return Response({
-                'message': 'Inventory created successfully',
-                'data': InventorySerializer(inventory).data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return StandardResponse.created(
+                data={'inventory': InventorySerializer(inventory).data},
+                message='Inventory created successfully'
+            )
+        error_message = StandardResponse.format_validation_errors(serializer.errors)
+        return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
     
     def retrieve(self, request, *args, **kwargs):
         """Get single inventory details"""
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return StandardResponse.success(data={'inventory': serializer.data})
     
     def update(self, request, *args, **kwargs):
         """Update inventory"""
@@ -83,11 +86,12 @@ class InventoryViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         if serializer.is_valid():
             inventory = serializer.save()
-            return Response({
-                'message': 'Inventory updated successfully',
-                'data': InventorySerializer(inventory).data
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return StandardResponse.success(
+                data={'inventory': InventorySerializer(inventory).data},
+                message='Inventory updated successfully'
+            )
+        error_message = StandardResponse.format_validation_errors(serializer.errors)
+        return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
     
     def partial_update(self, request, *args, **kwargs):
         """Partial update inventory"""
@@ -100,14 +104,13 @@ class InventoryViewSet(viewsets.ModelViewSet):
         
         # Check if linked to active reminder
         if instance.reminder and instance.reminder.is_active:
-            return Response({
-                'error': 'Cannot delete inventory linked to active reminder. Deactivate reminder first.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return StandardResponse.error(
+                message='Cannot delete inventory linked to active reminder. Deactivate reminder first',
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
         
         instance.delete()
-        return Response({
-            'message': 'Inventory deleted successfully'
-        }, status=status.HTTP_204_NO_CONTENT)
+        return StandardResponse.no_content(message='Inventory deleted successfully')
     
     @action(detail=True, methods=['post'])
     def adjust(self, request, pk=None):
@@ -136,15 +139,18 @@ class InventoryViewSet(viewsets.ModelViewSet):
                 inventory.reminder.quantity = new_quantity
                 inventory.reminder.save()
             
-            return Response({
-                'message': 'Inventory adjusted successfully',
-                'old_quantity': old_quantity,
-                'adjustment': adjustment,
-                'new_quantity': new_quantity,
-                'data': InventorySerializer(inventory).data
-            }, status=status.HTTP_200_OK)
+            return StandardResponse.success(
+                data={
+                    'old_quantity': old_quantity,
+                    'adjustment': adjustment,
+                    'new_quantity': new_quantity,
+                    'inventory': InventorySerializer(inventory).data
+                },
+                message='Inventory adjusted successfully'
+            )
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        error_message = StandardResponse.format_validation_errors(serializer.errors)
+        return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'])
     def low_stock(self, request):
@@ -153,10 +159,10 @@ class InventoryViewSet(viewsets.ModelViewSet):
         low_stock_items = [item for item in queryset if item.is_low_stock()]
         
         serializer = InventoryListSerializer(low_stock_items, many=True)
-        return Response({
+        return StandardResponse.success(data={
             'count': len(low_stock_items),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'inventory': serializer.data
+        })
     
     @action(detail=False, methods=['get'])
     def expired(self, request):
@@ -165,10 +171,10 @@ class InventoryViewSet(viewsets.ModelViewSet):
         expired_items = [item for item in queryset if item.is_expired()]
         
         serializer = InventoryListSerializer(expired_items, many=True)
-        return Response({
+        return StandardResponse.success(data={
             'count': len(expired_items),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'inventory': serializer.data
+        })
     
     @action(detail=False, methods=['get'])
     def expiring_soon(self, request):
@@ -185,7 +191,7 @@ class InventoryViewSet(viewsets.ModelViewSet):
         )
         
         serializer = InventoryListSerializer(expiring_soon, many=True)
-        return Response({
+        return StandardResponse.success(data={
             'count': expiring_soon.count(),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'inventory': serializer.data
+        })

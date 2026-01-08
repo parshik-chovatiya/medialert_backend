@@ -1,3 +1,4 @@
+# apps/notifications/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,6 +7,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import NotificationLog
 from .serializers import NotificationLogSerializer, NotificationLogListSerializer
+from utils.responses import StandardResponse
 
 
 class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -71,19 +73,19 @@ class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
         
         serializer = self.get_serializer(paginated_queryset, many=True)
         
-        return Response({
+        return StandardResponse.success(data={
             'count': total_count,
             'page': page,
             'page_size': page_size,
             'total_pages': (total_count + page_size - 1) // page_size,
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'logs': serializer.data
+        })
     
     def retrieve(self, request, *args, **kwargs):
         """Get single notification log details"""
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return StandardResponse.success(data={'log': serializer.data})
     
     @action(detail=False, methods=['get'])
     def recent(self, request):
@@ -92,10 +94,10 @@ class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = self.get_queryset().filter(created_at__gte=seven_days_ago)
         
         serializer = NotificationLogListSerializer(queryset, many=True)
-        return Response({
+        return StandardResponse.success(data={
             'count': queryset.count(),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'logs': serializer.data
+        })
     
     @action(detail=False, methods=['get'])
     def failed(self, request):
@@ -103,10 +105,10 @@ class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = self.get_queryset().filter(status='failed')
         
         serializer = NotificationLogListSerializer(queryset, many=True)
-        return Response({
+        return StandardResponse.success(data={
             'count': queryset.count(),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+            'logs': serializer.data
+        })
     
     @action(detail=False, methods=['get'])
     def stats(self, request):
@@ -136,7 +138,7 @@ class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
         today = timezone.now().date()
         today_count = queryset.filter(created_at__date=today).count()
         
-        return Response({
+        return StandardResponse.success(data={
             'total_notifications': total_notifications,
             'by_status': {
                 'sent': sent_count,
@@ -156,4 +158,4 @@ class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
                 'today': today_count,
                 'last_7_days': recent_count
             }
-        }, status=status.HTTP_200_OK)
+        })  

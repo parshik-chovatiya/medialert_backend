@@ -1,3 +1,4 @@
+# medicine_reminder/settings.py
 import os
 from pathlib import Path
 from datetime import timedelta
