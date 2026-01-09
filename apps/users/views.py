@@ -16,7 +16,7 @@ from .serializers import (
     PasswordChangeSerializer
 )
 from utils.responses import StandardResponse
-
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -30,7 +30,9 @@ def register_view(request):
         refresh = RefreshToken.for_user(user)
         
         response_data = {
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user).data,
+            'access_token': str(refresh.access_token),
+            'refresh_token': str(refresh)
         }
         
         response = StandardResponse.created(
@@ -58,7 +60,6 @@ def register_view(request):
         
         return response
     
-    # Format error message
     error_message = StandardResponse.format_validation_errors(serializer.errors)
     return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -77,6 +78,9 @@ def login_view(request):
         user = authenticate(request, email=email, password=password)
         
         if user is not None:
+            # Blacklist all existing tokens (logout from other devices)
+            OutstandingToken.objects.filter(user=user).delete()
+            
             # Update device token and last login
             if device_token:
                 user.device_token = device_token
@@ -87,7 +91,9 @@ def login_view(request):
             refresh = RefreshToken.for_user(user)
             
             response_data = {
-                'user': UserSerializer(user).data
+                'user': UserSerializer(user).data,
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh)
             }
             
             response = StandardResponse.success(
@@ -119,7 +125,6 @@ def login_view(request):
     
     error_message = StandardResponse.format_validation_errors(serializer.errors)
     return StandardResponse.error(message=error_message, status_code=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -195,8 +200,9 @@ def onboarding_status_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh_token_view(request):
-    """Refresh access token using refresh token from cookie"""
-    refresh_token = request.COOKIES.get('refresh_token')
+    """Refresh access token using refresh token from cookie or body"""
+    # Try to get refresh token from cookie first, then from body
+    refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh_token')
     
     if not refresh_token:
         return StandardResponse.unauthorized(message='Refresh token not found')
@@ -204,7 +210,14 @@ def refresh_token_view(request):
     try:
         refresh = RefreshToken(refresh_token)
         
-        response = StandardResponse.success(message='Token refreshed successfully')
+        response_data = {
+            'access_token': str(refresh.access_token)
+        }
+        
+        response = StandardResponse.success(
+            data=response_data,
+            message='Token refreshed successfully'
+        )
         
         # Set new access token in cookie
         response.set_cookie(
@@ -219,7 +232,6 @@ def refresh_token_view(request):
         return response
     except Exception as e:
         return StandardResponse.unauthorized(message='Invalid or expired refresh token')
-
 
 class UserUpdateView(generics.UpdateAPIView):
     """Update user profile"""
