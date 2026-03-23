@@ -34,7 +34,7 @@ class ReminderSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'initial_quantity', 'refill_reminder_sent', 'is_active', 'created_at', 'updated_at']
     
     def validate_notification_methods(self, value):
-        valid_methods = ['email', 'sms', 'push_notification']
+        valid_methods = ['email', 'sms', 'push_notification','alarm']
         if not value:
             raise serializers.ValidationError("At least one notification method is required.")
         for method in value:
