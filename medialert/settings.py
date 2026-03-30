@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-ROOT_URLCONF = 'medicine_reminder.urls'
+ROOT_URLCONF = 'medialert.urls'
 
 TEMPLATES = [
     {
@@ -71,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'medicine_reminder.wsgi.application'
+WSGI_APPLICATION = 'medialert.wsgi.application'
 
 # Database
 # DATABASES = {
