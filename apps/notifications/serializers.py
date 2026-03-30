@@ -20,6 +20,12 @@ class NotificationLogSerializer(serializers.ModelSerializer):
         if obj.reminder:
             return obj.reminder.medicine_name
         return None
+    
+    # def get_reminder_details(self,obj):
+    #     if obj.reminder:
+    #         reminder = obj.reminder(self,context = self.context):
+    #         if (reminder.notnull()):
+    #             return reminder 
 
 
 class NotificationLogListSerializer(serializers.ModelSerializer):

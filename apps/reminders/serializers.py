@@ -21,7 +21,7 @@ class DoseScheduleSerializer(serializers.ModelSerializer):
 class ReminderSerializer(serializers.ModelSerializer):
     """Serializer for reminder with dose schedules"""
     dose_schedules = DoseScheduleSerializer(many=True)
-    phone_number = serializers.CharField(required=False, allow_blank=True, write_only=True, help_text='Required if SMS notification is selected')
+    phone_number = serializers.CharField(required=False, allow_blank=True, write_only=True, help_text='Required if SMS or WhatsApp notification is selected')
     
     class Meta:
         model = Reminder
@@ -34,7 +34,7 @@ class ReminderSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'initial_quantity', 'refill_reminder_sent', 'is_active', 'created_at', 'updated_at']
     
     def validate_notification_methods(self, value):
-        valid_methods = ['email', 'sms', 'push_notification','alarm']
+        valid_methods = ['email', 'sms', 'push_notification', 'alarm', 'whatsapp_message']
         if not value:
             raise serializers.ValidationError("At least one notification method is required.")
         for method in value:
@@ -68,13 +68,18 @@ class ReminderSerializer(serializers.ModelSerializer):
                 'refill_threshold': "Refill threshold is required when refill reminder is enabled."
             })
         
-        # Validate phone_number if SMS is selected
+        # Validate phone_number if SMS or WhatsApp is selected
         notification_methods = attrs.get('notification_methods', [])
         phone_number = attrs.get('phone_number')
-        
+
         if 'sms' in notification_methods and not phone_number:
             raise serializers.ValidationError({
                 'phone_number': "Phone number is required when SMS notification is selected."
+            })
+
+        if 'whatsapp_message' in notification_methods and not phone_number:
+            raise serializers.ValidationError({
+                'phone_number': "Phone number is required when WhatsApp notification is selected."
             })
         
         return attrs
@@ -84,8 +89,9 @@ class ReminderSerializer(serializers.ModelSerializer):
         phone_number = validated_data.pop('phone_number', None)
         user = self.context['request'].user
         
-        # Save phone number to user if SMS is selected
-        if phone_number and 'sms' in validated_data.get('notification_methods', []):
+        # Save phone number to user if SMS or WhatsApp is selected
+        notification_methods = validated_data.get('notification_methods', [])
+        if phone_number and ('sms' in notification_methods or 'whatsapp_message' in notification_methods):
             user.phone_number = phone_number
             user.save()
         
@@ -113,8 +119,9 @@ class ReminderSerializer(serializers.ModelSerializer):
         phone_number = validated_data.pop('phone_number', None)
         user = self.context['request'].user
         
-        # Update phone number if SMS is selected
-        if phone_number and 'sms' in validated_data.get('notification_methods', instance.notification_methods):
+        # Update phone number if SMS or WhatsApp is selected
+        notification_methods = validated_data.get('notification_methods', instance.notification_methods)
+        if phone_number and ('sms' in notification_methods or 'whatsapp_message' in notification_methods):
             user.phone_number = phone_number
             user.save()
         

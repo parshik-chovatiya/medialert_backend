@@ -16,6 +16,8 @@ class NotificationLog(models.Model):
         ('email', 'Email'),
         ('sms', 'SMS'),
         ('push_notification', 'Push Notification'),
+        ('alarm','alarm'),
+        ('whatsapp_message','WhatsApp Message'),
     ]
     
     STATUS_CHOICES = [

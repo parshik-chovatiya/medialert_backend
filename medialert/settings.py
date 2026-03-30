@@ -1,4 +1,4 @@
-# medialert/settings.py
+# medicine_reminder/settings.py
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-ROOT_URLCONF = 'medialert.urls'
+ROOT_URLCONF = 'medicine_reminder.urls'
 
 TEMPLATES = [
     {
@@ -71,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'medialert.wsgi.application'
+WSGI_APPLICATION = 'medicine_reminder.wsgi.application'
 
 # Database
 # DATABASES = {
@@ -240,6 +240,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER')
+TWILIO_WHATSAPP_NUMBER = config('TWILIO_WHATSAPP_NUMBER')
 
 # Firebase Configuration (Push Notifications)
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH')

@@ -206,6 +206,89 @@ class SMSService:
             logger.error(f"Failed to send refill reminder SMS to {user.email}: {str(e)}")
             return False
 
+class WhatsAppService:
+    """Service for sending WhatsApp notifications via Twilio"""
+
+    @staticmethod
+    def send_dose_reminder(user, reminder, dose_schedule):
+        """Send dose reminder via WhatsApp"""
+        try:
+            from twilio.rest import Client
+
+            if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
+                logger.warning("Twilio credentials not configured")
+                return False
+
+            phone_number = user.phone_number
+            if not phone_number:
+                logger.warning(f"User {user.email} does not have a phone number for WhatsApp")
+                return False
+
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+            message = (
+                f"\U0001f48a *Medicine Reminder*\n"
+                f"Time to take *{dose_schedule.amount} {reminder.get_medicine_type_display()}* "
+                f"of *{reminder.medicine_name}* at {dose_schedule.time.strftime('%I:%M %p')}.\n"
+                f"Remaining quantity: {reminder.quantity}"
+            )
+
+            whatsapp_from = f"whatsapp:{settings.TWILIO_WHATSAPP_NUMBER}"
+            # Ensure the to-number has the whatsapp prefix
+            to_number = phone_number if phone_number.startswith("whatsapp:") else f"whatsapp:{phone_number}"
+
+            client.messages.create(
+                body=message,
+                from_=whatsapp_from,
+                to=to_number
+            )
+
+            logger.info(f"Dose reminder WhatsApp sent to {phone_number} for {reminder.medicine_name}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to send dose reminder WhatsApp to {user.email}: {str(e)}")
+            return False
+
+    @staticmethod
+    def send_refill_reminder(user, reminder):
+        """Send refill reminder via WhatsApp"""
+        try:
+            from twilio.rest import Client
+
+            if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
+                logger.warning("Twilio credentials not configured")
+                return False
+
+            phone_number = user.phone_number
+            if not phone_number:
+                logger.warning(f"User {user.email} does not have a phone number for WhatsApp")
+                return False
+
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+            message = (
+                f"\u26a0\ufe0f *Refill Alert*\n"
+                f"Your *{reminder.medicine_name}* stock is running low!\n"
+                f"Current quantity: *{reminder.quantity}* (threshold: {reminder.refill_threshold}).\n"
+                f"Please refill soon."
+            )
+
+            whatsapp_from = f"whatsapp:{settings.TWILIO_WHATSAPP_NUMBER}"
+            to_number = phone_number if phone_number.startswith("whatsapp:") else f"whatsapp:{phone_number}"
+
+            client.messages.create(
+                body=message,
+                from_=whatsapp_from,
+                to=to_number
+            )
+
+            logger.info(f"Refill reminder WhatsApp sent to {phone_number} for {reminder.medicine_name}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to send refill reminder WhatsApp to {user.email}: {str(e)}")
+            return False
 
 class PushNotificationService:
     """Service for sending push notifications via Firebase FCM"""
@@ -363,6 +446,9 @@ class NotificationDispatcher:
         
         if 'sms' in methods:
             results['sms'] = SMSService.send_dose_reminder(user, reminder, dose_schedule)
+
+        if 'whatsapp_message' in methods:
+            results['whatsapp_message'] = WhatsAppService.send_dose_reminder(user, reminder, dose_schedule)
         
         if 'push_notification' in methods:
             results['push_notification'] = PushNotificationService.send_dose_reminder(user, reminder, dose_schedule)
@@ -379,8 +465,11 @@ class NotificationDispatcher:
         
         if 'sms' in methods:
             results['sms'] = SMSService.send_refill_reminder(user, reminder)
+
+        if 'whatsapp_message' in methods:
+            results['whatsapp_message'] = WhatsAppService.send_refill_reminder(user, reminder)
         
         if 'push_notification' in methods:
             results['push_notification'] = PushNotificationService.send_refill_reminder(user, reminder)
         
-        return results  
+        return results
